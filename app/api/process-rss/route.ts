@@ -1,76 +1,37 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import Parser from 'rss-parser';
-
-const parser = new Parser();
 
 export async function GET() {
-  const diagnosticLog: string[] = [];
-  diagnosticLog.push("🚀 Start analyse...");
-
+  const timestamp = new Date().toLocaleTimeString();
+  
   try {
-    // We testen met 1 specifieke feed
-    const FEED_URL = 'https://feeds.feedburner.com/goodnewsnetwork';
-    diagnosticLog.push(`📡 Feed ophalen: ${FEED_URL}`);
-    
-    const feed = await parser.parseURL(FEED_URL);
-    const items = feed.items.slice(0, 3); // Pak de laatste 3
-    
-    diagnosticLog.push(`📰 ${items.length} artikelen gevonden in de feed.`);
+    console.log("⚡ [FORCE] Poging tot geforceerde toevoeging...");
 
-    for (const item of items) {
-      diagnosticLog.push(`🔍 Checken: "${item.title?.slice(0, 30)}..."`);
-
-      // Controleer of de URL al bestaat
-      const existing = await db.article.findUnique({
-        where: { originalUrl: item.link }
-      });
-
-      if (existing) {
-        diagnosticLog.push(`⏭️ OVERSLAGEN: Dit artikel staat al in je Supabase database.`);
-        continue; 
-      }
-
-      // Als we hier komen, is het artikel écht nieuw.
-      // We voegen hem nu toe ZONDER AI om te testen of het lukt.
-      diagnosticLog.push(`✨ NIEUW! Bezig met toevoegen aan Supabase...`);
-
-      await db.article.create({
-        data: {
-          originalTitle: item.title || 'Geen titel',
-          originalContent: item.contentSnippet || 'Geen inhoud',
-          originalUrl: item.link || '',
-          originalSource: 'Good News Network',
-          category: 'COMMUNITY',
-          region: 'EUROPE',
-          publishedAt: new Date(),
-          translations: {
-            create: [
-              { language: 'NL', title: item.title || 'Titel', content: item.contentSnippet || 'Inhoud' }
-            ]
-          }
+    const testArticle = await db.article.create({
+      data: {
+        originalTitle: `Geforceerde Test ${timestamp}`,
+        originalContent: "Als je dit ziet, werkt de verbinding tussen Netlify en Supabase 100%.",
+        originalUrl: `https://force-test-${Date.now()}.com`,
+        originalSource: "Systeem Test",
+        category: "TECHNOLOGY",
+        region: "EUROPE",
+        publishedAt: new Date(),
+        translations: {
+          create: [
+            { language: 'NL', title: `Test NL ${timestamp}`, content: 'Succesvolle verbinding!' }
+          ]
         }
-      });
-
-      return NextResponse.json({ 
-        success: true, 
-        added: 1, 
-        log: diagnosticLog 
-      });
-    }
+      }
+    });
 
     return NextResponse.json({ 
       success: true, 
-      added: 0, 
-      message: "Alle artikelen uit deze feed staan al in je database.",
-      log: diagnosticLog 
+      message: "HET WERKT!", 
+      addedArticle: testArticle.originalTitle 
     });
 
   } catch (error: any) {
-    return NextResponse.json({ 
-      success: false, 
-      error: error.message, 
-      log: diagnosticLog 
-    }, { status: 500 });
+    console.error("🚨 [FORCE] Fout:", error.message);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
