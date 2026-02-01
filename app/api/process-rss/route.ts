@@ -1,49 +1,76 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import Parser from 'rss-parser';
+
+const parser = new Parser();
 
 export async function GET() {
-  console.log("🔍 [DEBUG] Start test...");
-  
-  try {
-    // TEST 1: Is de API Key aanwezig?
-    const hasKey = !!process.env.OPENAI_API_KEY;
-    console.log("🔑 [DEBUG] OpenAI Key aanwezig op Netlify:", hasKey);
+  const diagnosticLog: string[] = [];
+  diagnosticLog.push("🚀 Start analyse...");
 
-    // TEST 2: Database verbinding
-    // We maken een unieke URL zodat de 'duplicaat-check' nooit in de weg zit
-    const uniqueId = Date.now();
+  try {
+    // We testen met 1 specifieke feed
+    const FEED_URL = 'https://feeds.feedburner.com/goodnewsnetwork';
+    diagnosticLog.push(`📡 Feed ophalen: ${FEED_URL}`);
     
-    console.log("📡 [DEBUG] Poging tot schrijven naar DB...");
-    const testArticle = await db.article.create({
-      data: {
-        originalTitle: `Test Artikel ${uniqueId}`,
-        originalContent: "Dit is een test om te kijken of Netlify de database kan bereiken.",
-        originalUrl: `https://test-${uniqueId}.com`,
-        originalSource: "Debug Test",
-        category: "COMMUNITY",
-        region: "EUROPE",
-        publishedAt: new Date(),
-        translations: {
-          create: [
-            { language: 'NL', title: 'Test NL', content: 'Inhoud NL' }
-          ]
-        }
+    const feed = await parser.parseURL(FEED_URL);
+    const items = feed.items.slice(0, 3); // Pak de laatste 3
+    
+    diagnosticLog.push(`📰 ${items.length} artikelen gevonden in de feed.`);
+
+    for (const item of items) {
+      diagnosticLog.push(`🔍 Checken: "${item.title?.slice(0, 30)}..."`);
+
+      // Controleer of de URL al bestaat
+      const existing = await db.article.findUnique({
+        where: { originalUrl: item.link }
+      });
+
+      if (existing) {
+        diagnosticLog.push(`⏭️ OVERSLAGEN: Dit artikel staat al in je Supabase database.`);
+        continue; 
       }
-    });
+
+      // Als we hier komen, is het artikel écht nieuw.
+      // We voegen hem nu toe ZONDER AI om te testen of het lukt.
+      diagnosticLog.push(`✨ NIEUW! Bezig met toevoegen aan Supabase...`);
+
+      await db.article.create({
+        data: {
+          originalTitle: item.title || 'Geen titel',
+          originalContent: item.contentSnippet || 'Geen inhoud',
+          originalUrl: item.link || '',
+          originalSource: 'Good News Network',
+          category: 'COMMUNITY',
+          region: 'EUROPE',
+          publishedAt: new Date(),
+          translations: {
+            create: [
+              { language: 'NL', title: item.title || 'Titel', content: item.contentSnippet || 'Inhoud' }
+            ]
+          }
+        }
+      });
+
+      return NextResponse.json({ 
+        success: true, 
+        added: 1, 
+        log: diagnosticLog 
+      });
+    }
 
     return NextResponse.json({ 
       success: true, 
-      message: "Verbinding met Database werkt!", 
-      openaiKeyFound: hasKey,
-      addedArticle: testArticle.originalTitle 
+      added: 0, 
+      message: "Alle artikelen uit deze feed staan al in je database.",
+      log: diagnosticLog 
     });
 
   } catch (error: any) {
-    console.error("🚨 [DEBUG] FOUT GEVONDEN:", error.message);
     return NextResponse.json({ 
       success: false, 
-      error: error.message,
-      hint: "Als je hier 'PrismaClientKnownRequestError' ziet, is er iets mis met je Database URL."
+      error: error.message, 
+      log: diagnosticLog 
     }, { status: 500 });
   }
 }
