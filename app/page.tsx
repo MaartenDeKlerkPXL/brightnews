@@ -1,8 +1,8 @@
 "use client";
 
-import { useApp } from '@/lib/context';
-import Filters from '@/components/Filters';
-import ArticleGrid from '@/components/ArticleGrid';
+import { useApp } from '../lib/context';
+import Filters from '../components/Filters';
+import ArticleGrid from '../components/ArticleGrid';
 
 const uiTranslations = {
   NL: {
