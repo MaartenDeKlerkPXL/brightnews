@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Parser from 'rss-parser'
 import { prisma } from '@/lib/db'
+export const maxDuration = 60;
 
 const parser = new Parser({
   headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0' },
@@ -157,4 +158,76 @@ export async function GET() {
     }
   }
   return NextResponse.json({ success: true, added });
+}
+
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db'; // Pas dit aan naar jouw Prisma/DB locatie
+// Hier komen je imports voor RSS parsers en AI/Vertaling...
+
+export const maxDuration = 60; // Verlengt de tijd op ondersteunde platformen
+
+export async function GET() {
+  console.log("🚀 [RSS-PROCESS] Start van de nieuws-update...");
+  
+  let addedCount = 0;
+  let errorCount = 0;
+
+  try {
+    const feeds = [
+      'https://voorbeeld-feed-1.nl/rss',
+      'https://voorbeeld-feed-2.com/rss'
+      // Voeg hier je echte feeds toe
+    ];
+
+    console.log(`📡 [RSS-PROCESS] Bezig met het ophalen van ${feeds.length} feeds...`);
+
+    for (const url of feeds) {
+      console.log(`🔗 [RSS-PROCESS] Feed ophalen: ${url}`);
+      
+      // 1. Fetch de RSS
+      // const feed = await parser.parseURL(url);
+      // console.log(`📰 [RSS-PROCESS] ${feed.items.length} artikelen gevonden in feed.`);
+
+      for (const item of []) { // Vervang [] door je feed.items
+        try {
+          // 2. Check op duplicaten
+          const exists = await db.article.findUnique({
+            where: { originalUrl: item.link }
+          });
+
+          if (exists) {
+            console.log(`⏭️ [RSS-PROCESS] Overslaan: Artikel bestaat al (${item.title})`);
+            continue;
+          }
+
+          console.log(`🔍 [RSS-PROCESS] Nieuw artikel ontdekt: "${item.title}"`);
+
+          // 3. AI Filter & Vertaling
+          console.log(`🤖 [RSS-PROCESS] AI analyseert en vertaalt: "${item.title}"...`);
+          
+          // HIER KOMT JE AI LOGICA...
+          
+          addedCount++;
+          console.log(`✅ [RSS-PROCESS] Succesvol toegevoegd: "${item.title}"`);
+
+        } catch (itemError) {
+          errorCount++;
+          console.error(`❌ [RSS-PROCESS] Fout bij artikel: ${item.title}`, itemError);
+        }
+      }
+    }
+
+    console.log(`🏁 [RSS-PROCESS] Klaar! Totaal toegevoegd: ${addedCount}, Fouten: ${errorCount}`);
+
+    return NextResponse.json({ 
+      success: true, 
+      added: addedCount, 
+      errors: errorCount,
+      message: "Update voltooid" 
+    });
+
+  } catch (globalError) {
+    console.error("🚨 [RSS-PROCESS] CRITIEKE FOUT IN PROCESS:", globalError);
+    return NextResponse.json({ success: false, error: "Interne server fout" }, { status: 500 });
+  }
 }
