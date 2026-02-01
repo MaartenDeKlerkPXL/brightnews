@@ -38,7 +38,7 @@ model Article {
   originalTitle   String
   originalContent String               
   originalSource  String
-  originalUrl     String
+  originalUrl     String              @unique
   category        String
   region          String
   publishedAt     DateTime

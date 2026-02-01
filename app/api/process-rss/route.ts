@@ -1,37 +1,49 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import Parser from 'rss-parser';
+import OpenAI from 'openai';
+
+const parser = new Parser();
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function GET() {
-  const timestamp = new Date().toLocaleTimeString();
-  
   try {
-    console.log("⚡ [FORCE] Poging tot geforceerde toevoeging...");
+    const feed = await parser.parseURL('https://feeds.feedburner.com/goodnewsnetwork');
+    const item = feed.items[0]; // We doen er 1 per keer voor de snelheid op Netlify
 
-    const testArticle = await db.article.create({
+    const existing = await db.article.findFirst({
+      where: { originalUrl: item.link || '' }
+    });
+
+    if (existing) return NextResponse.json({ added: 0, message: "Geen nieuw nieuws" });
+
+    // Snelle AI check & vertaling
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: `Vertaal dit kort naar NL, EN, FR, ES, DE. JSON formaat: { "translations": [{ "language": "NL", "title": "...", "content": "..." }] }. Tekst: ${item.title}` }],
+      response_format: { type: "json_object" }
+    });
+
+    const result = JSON.parse(aiResponse.choices[0].message.content || '{}');
+
+    // Opslaan in de juiste tabellen
+    await db.article.create({
       data: {
-        originalTitle: `Geforceerde Test ${timestamp}`,
-        originalContent: "Als je dit ziet, werkt de verbinding tussen Netlify en Supabase 100%.",
-        originalUrl: `https://force-test-${Date.now()}.com`,
-        originalSource: "Systeem Test",
-        category: "TECHNOLOGY",
-        region: "EUROPE",
+        originalTitle: item.title || '',
+        originalContent: item.contentSnippet || '',
+        originalUrl: item.link || '',
+        originalSource: 'Good News Network',
+        category: 'COMMUNITY',
+        region: 'EUROPE',
         publishedAt: new Date(),
         translations: {
-          create: [
-            { language: 'NL', title: `Test NL ${timestamp}`, content: 'Succesvolle verbinding!' }
-          ]
+          create: result.translations // Dit vult automatisch de ArticleTranslation tabel
         }
       }
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      message: "HET WERKT!", 
-      addedArticle: testArticle.originalTitle 
-    });
-
+    return NextResponse.json({ success: true, added: 1 });
   } catch (error: any) {
-    console.error("🚨 [FORCE] Fout:", error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
