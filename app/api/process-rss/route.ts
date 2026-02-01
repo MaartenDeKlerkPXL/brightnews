@@ -18,7 +18,36 @@ const RSS_FEEDS = [
   'https://www.theverge.com/rss/index.xml', 'https://techcrunch.com/feed/', 'https://www.sciencemag.org/rss/current.xml',
   'https://scitechdaily.com/feed/', 'https://www.sciencedaily.com/rss/', 'https://www.economist.com/latest/rss.xml',
   'https://www.forbes.com/business/feed/', 'https://runningonrealfood.com/feed/', 'https://www.wellnessimpact.org/feed/',
-  'https://www.england.nhs.uk/feed/', 'https://feeds.bbci.co.uk/sport/rss.xml', 'https://variety.com/feed/'
+  'https://www.england.nhs.uk/feed/', 'https://feeds.bbci.co.uk/sport/rss.xml', 'https://variety.com/feed/', 'https://www.nu.nl/rss/Algemeen',
+  'https://www.nu.nl/rss/Economie',
+  'https://www.nu.nl/rss/Sport',
+  'https://www.nu.nl/rss/entertainment',
+  'https://www.nu.nl/rss/Opmerkelijk',
+  'https://www.nu.nl/rss/slimmer-leven',
+  'https://www.nu.nl/rss/tech-wetenschap',
+  'https://www.nu.nl/rss/goed-nieuws',
+  'https://www.positive.news/feed/',
+  'https://www.optimistdaily.com/feed/',
+  'https://www.goodgoodgood.co/articles/rss.xml',
+  'https://www.goodnewsnetwork.org/category/news/inspiring/feed/',
+  'https://www.goodnewsnetwork.org/category/news/science/feed/',
+  'https://www.goodnewsnetwork.org/category/news/animals/feed/',
+  'https://www.goodnewsnetwork.org/category/news/world/feed/',
+  'https://www.goodnewsnetwork.org/category/news/health/feed/',
+  'https://www.goodnewsnetwork.org/category/good-talks/feed/',
+  'https://www.goodnewsnetwork.org/category/news/feed/',
+  'https://goodnewsmag.org/feed/',
+  'https://www.globalpositivenewsnetwork.com/feed/',
+  'https://lifebeyondnumbers.com/feed/',
+  'https://thegoodnewshub.com/feed/',
+  'https://goodnews.eu/en/feed/',
+  'https://www.upworthy.com/feeds/feed.rss',
+  'https://www.thegoodnewsmovement.com/feed/',
+  'https://www.goodnewsfl.org/feed/',
+  'https://news.janegoodall.org/feed/',
+  'https://goodblacknews.org/feed/',
+  'https://www.yesmagazine.org/feed',
+  'https://reasonstobecheerful.world/feed/'
 ]
 
 async function processWithGroq(title: string, content: string, retryCount = 0): Promise<any> {
@@ -26,11 +55,12 @@ async function processWithGroq(title: string, content: string, retryCount = 0): 
   
   // NOG bredere prompt: we willen ELK positief of neutraal-interessant verhaal.
   const prompt = `You are a positive news editor. 
-  ACCEPT (shouldKeep: true): Sports (Verstappen, etc.), Tech (Google, AI, gadgets), Entertainment (movies, interviews), Science, Health, and Business.
-  REJECT (shouldKeep: false): Death, war, crime, political fighting (Trump/Biden), and accidents.
+  ACCEPT (shouldKeep: true): Sports, Tech, Entertainment, Science, Health, and Business, Green World, Community, Travel, positive stories, inspiring.
+  REJECT (shouldKeep: false): Death, war, crime, political, and accidents.
   
   TASK: Write a fun, engaging 300-word story. 
-  JSON ONLY: { "shouldKeep": true, "category": "SPORT"|"TECHNOLOGY"|"SCIENCE"|"HEALTH"|"ENTERTAINMENT"|"COMMUNITY"|"TRAVEL"|"GREEN_WORLD", "region": "EUROPE"|"ASIA"|"AFRICA"|"NORTH_AMERICA"|"SOUTH_AMERICA"|"OCEANIA", "imageSearchTerm": "str", "translations": { "NL": {"title": "str", "content": "str"}, "EN": {"title": "str", "content": "str"}, "FR": {"title": "str", "content": "str"}, "ES": {"title": "str", "content": "str"}, "DE": {"title": "str", "content": "str"} } }`;
+  CRITICAL - imageSearchTerm: Generate 2-3 keywords describing VISUAL objects, actions or scenes. NEVER use person names. Use generic visual descriptors instead: e.g. "tennis action" not "Rybakina", "soccer match" not "Messi", "scientist lab" not "Einstein", "running race", "technology office", "nature landscape".
+  JSON ONLY: { "shouldKeep": true, "category": "SPORT"|"TECHNOLOGY"|"SCIENCE"|"HEALTH"|"ENTERTAINMENT"|"COMMUNITY"|"TRAVEL"|"GREEN_WORLD", "region": "EUROPE"|"ASIA"|"AFRICA"|"NORTH_AMERICA"|"SOUTH_AMERICA"|"OCEANIA", "imageSearchTerm": "2-3 visual keywords (objects/actions, NO person names)", "translations": { "NL": {"title": "str", "content": "str"}, "EN": {"title": "str", "content": "str"}, "FR": {"title": "str", "content": "str"}, "ES": {"title": "str", "content": "str"}, "DE": {"title": "str", "content": "str"} } }`;
 
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -84,9 +114,21 @@ export async function GET() {
         }
 
         let imageUrl = item.enclosure?.url || (item.mediaContent && item.mediaContent[0]?.$.url) || null;
+
         if (!imageUrl) {
-          imageUrl = `https://loremflickr.com/1200/800/${aiResult.imageSearchTerm || 'discovery'}?lock=${Math.floor(Math.random() * 1000)}`;
-        }
+          // 1. Maak de tags schoon (geen spaties, kleine letters)
+          const categoryTag = aiResult.category.toLowerCase().replace('_', ''); // Bijv. 'greenworld'
+          const aiTag = aiResult.imageSearchTerm 
+            ? aiResult.imageSearchTerm.split(',')[0].trim().toLowerCase().replace(/[^a-z]/g, '') 
+            : '';
+        
+          // 2. De Absolute Noodoplossing:
+          // We sturen meerdere tags naar LoremFlickr. Als de eerste (specifieke) niet bestaat, 
+          // pakt hij de tweede (de categorie).
+          const finalTags = aiTag ? `${aiTag},${categoryTag}` : categoryTag;
+        
+          // 3. Vast 16:9 formaat (1200x675) voor strakke layout
+          imageUrl = `https://loremflickr.com/1200/675/${finalTags}/all?lock=${Date.now()}`;        }
 
         await prisma.article.create({
           data: {

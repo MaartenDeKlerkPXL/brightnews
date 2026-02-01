@@ -1,44 +1,40 @@
 'use client'
 
-import { useApp } from './providers'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { categories, regions } from '@/lib/utils'
+import { useApp } from '@/lib/context'
 
-export function Filters() {
+const categories = ["ALL", "TECHNOLOGY", "GREEN_WORLD", "HEALTH", "SPORT", "COMMUNITY", "SCIENCE", "ENTERTAINMENT"]
+const regions = ["ALL", "EUROPE", "ASIA", "NORTH_AMERICA", "AFRICA", "SOUTH_AMERICA", "OCEANIA"]
+
+// Helper functie om tekst mooi te maken: TECHNOLOGY -> Technology
+const formatLabel = (text: string) => {
+  if (text === "ALL") return "Alles";
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase().replace('_', ' ');
+}
+
+export default function Filters() {
   const { selectedCategory, setSelectedCategory, selectedRegion, setSelectedRegion } = useApp()
 
   return (
-    <div className="flex flex-wrap gap-4 mb-8">
-      <div className="flex-1 min-w-[200px]">
-        <label className="text-sm font-medium mb-2 block">Categorie</label>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat.value} value={cat.value}>
-                {cat.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="flex-1 min-w-[200px]">
-        <label className="text-sm font-medium mb-2 block">Regio</label>
-        <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {regions.map((reg) => (
-              <SelectItem key={reg.value} value={reg.value}>
-                {reg.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex flex-wrap gap-4 mb-10">
+      <select 
+        value={selectedCategory} 
+        onChange={(e) => setSelectedCategory(e.target.value)}
+        className="bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none"
+      >
+        {categories.map((cat) => (
+          <option key={cat} value={cat}>{formatLabel(cat)}</option>
+        ))}
+      </select>
+
+      <select 
+        value={selectedRegion} 
+        onChange={(e) => setSelectedRegion(e.target.value)}
+        className="bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none"
+      >
+        {regions.map((reg) => (
+          <option key={reg} value={reg}>{formatLabel(reg)}</option>
+        ))}
+      </select>
     </div>
   )
 }
