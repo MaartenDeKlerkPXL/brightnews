@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db'; // We gebruiken 'db' zoals we in de vorige stap hebben ingesteld
 
 export async function GET() {
   try {
-    // Prisma maakt van 'ArticleTranslation' -> 'articleTranslation' (kleine letter a)
+    // We verwijderen eerst de vertalingen, dan de artikelen (vanwege relaties)
+    // Let op: 'articleTranslation' moet exact matchen met je Prisma model naam
     await db.articleTranslation.deleteMany({});
-    await db.savedArticle.deleteMany({});
     await db.article.deleteMany({});
-    
-    return NextResponse.json({ success: true, message: "Database is leeg!" });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: "Database is nu helemaal leeg!" 
+    });
+  } catch (error) {
+    console.error("Fout bij het legen van de database:", error);
+    return NextResponse.json({ 
+      success: false, 
+      error: "Kon de database niet legen. Check de server logs." 
+    }, { status: 500 });
   }
 }

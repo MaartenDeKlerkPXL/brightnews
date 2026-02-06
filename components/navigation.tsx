@@ -21,7 +21,7 @@ export default function Navigation() {
       <div className="container mx-auto px-4 flex justify-between items-center">
         {/* Logo = Home button */}
         <a href="/" className="text-2xl font-bold tracking-tight text-gray-900 hover:opacity-80 transition-opacity">
-          <span className="text-green-500">Brightling</span><span style={{ fontSize: '1.1rem' }}>.News</span>
+          <span className="text-green-500">Bright</span>News
         </a>
         
         <div className="flex gap-6 items-center font-medium text-sm">

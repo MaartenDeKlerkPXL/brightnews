@@ -2,24 +2,28 @@
 
 import { createContext, useContext, useState, useEffect } from 'react'
 
+// We maken een strikt type voor de talen
 type LanguageCode = 'EN' | 'NL' | 'FR' | 'ES' | 'DE'
 
-interface AppContextType {
+// ÉÉN duidelijke interface voor de hele app
+export interface AppContextType {
   language: LanguageCode
   setLanguage: (lang: LanguageCode) => void
-  selectedCategory: string
-  setSelectedCategory: (cat: string) => void
-  selectedRegion: string
-  setSelectedRegion: (reg: string) => void
+  selectedCategory: string | null
+  setSelectedCategory: (cat: string | null) => void
+  selectedRegion: string | null
+  setSelectedRegion: (reg: string | null) => void
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // De states voor de filters
   const [language, setLanguage] = useState<LanguageCode>('NL')
-  const [selectedCategory, setSelectedCategory] = useState('ALL')
-  const [selectedRegion, setSelectedRegion] = useState('ALL')
+  const [selectedCategory, setSelectedCategory] = useState<string | null>('ALL')
+  const [selectedRegion, setSelectedRegion] = useState<string | null>('ALL')
 
+  // Laden van taal uit de browser-opslag
   useEffect(() => {
     const savedLang = localStorage.getItem('language') as LanguageCode
     if (savedLang && ['EN', 'NL', 'FR', 'ES', 'DE'].includes(savedLang)) {
@@ -27,6 +31,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Opslaan van taal bij wijziging
   useEffect(() => {
     localStorage.setItem('language', language)
   }, [language])
@@ -47,6 +52,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   )
 }
 
+// De 'hook' om de data makkelijk te gebruiken in je componenten
 export function useApp() {
   const context = useContext(AppContext)
   if (!context) {
