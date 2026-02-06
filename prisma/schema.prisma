@@ -1,7 +1,6 @@
-
 generator client {
   provider      = "prisma-client-js"
-binaryTargets = ["native", "darwin"]
+  binaryTargets = ["native", "darwin", "darwin-arm64"]
 }
 
 datasource db {
@@ -33,18 +32,19 @@ model Subscription {
 }
 
 model Article {
-  id              String              @id @default(cuid())
+  id              String               @id @default(cuid())
   imageUrl        String?              
   originalTitle   String
   originalContent String               
   originalSource  String
-  originalUrl     String              @unique
+  originalUrl     String               @unique
   category        String
   region          String
   publishedAt     DateTime
   processedAt     DateTime             @default(now())
   isSaved         Boolean              @default(false)
-  translations    ArticleTranslation
+  // FIX: Toegevoegde blokhaken voor 1-op-veel relatie
+  translations    ArticleTranslation[]
   savedArticles   SavedArticle[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
