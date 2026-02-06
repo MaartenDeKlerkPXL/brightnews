@@ -1,40 +1,39 @@
 'use client'
 
-import { useApp } from '@/lib/context'
+import React from 'react'
+import { useApp } from './providers'
 
-const categories = ["ALL", "TECHNOLOGY", "GREEN_WORLD", "HEALTH", "SPORT", "COMMUNITY", "SCIENCE", "ENTERTAINMENT"]
-const regions = ["ALL", "EUROPE", "ASIA", "NORTH_AMERICA", "AFRICA", "SOUTH_AMERICA", "OCEANIA"]
-
-// Helper functie om tekst mooi te maken: TECHNOLOGY -> Technology
-const formatLabel = (text: string) => {
-  if (text === "ALL") return "Alles";
-  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase().replace('_', ' ');
-}
+const CATEGORIES = [
+  { id: 'ALL', NL: 'Alles', EN: 'All', FR: 'Tout', ES: 'Todo', DE: 'Alle' },
+  { id: 'TECHNOLOGY', NL: 'Tech', EN: 'Tech', FR: 'Tech', ES: 'Tecnología', DE: 'Tech' },
+  { id: 'GREEN_WORLD', NL: 'Groen', EN: 'Green', FR: 'Vert', ES: 'Verde', DE: 'Grün' },
+  { id: 'HEALTH', NL: 'Gezondheid', EN: 'Health', FR: 'Santé', ES: 'Salud', DE: 'Gesundheit' },
+  { id: 'COMMUNITY', NL: 'Samenleving', EN: 'Community', FR: 'Communauté', ES: 'Comunidad', DE: 'Gemeinschaft' },
+]
 
 export default function Filters() {
-  const { selectedCategory, setSelectedCategory, selectedRegion, setSelectedRegion } = useApp()
+  // We halen alles op via de useApp hook
+  const { 
+    language, 
+    selectedCategory, 
+    setSelectedCategory 
+  } = useApp()
 
   return (
-    <div className="flex flex-wrap gap-4 mb-10">
-      <select 
-        value={selectedCategory} 
-        onChange={(e) => setSelectedCategory(e.target.value)}
-        className="bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none"
-      >
-        {categories.map((cat) => (
-          <option key={cat} value={cat}>{formatLabel(cat)}</option>
-        ))}
-      </select>
-
-      <select 
-        value={selectedRegion} 
-        onChange={(e) => setSelectedRegion(e.target.value)}
-        className="bg-gray-50 border-none rounded-xl px-4 py-3 text-sm font-semibold focus:ring-2 focus:ring-primary/20 outline-none"
-      >
-        {regions.map((reg) => (
-          <option key={reg} value={reg}>{formatLabel(reg)}</option>
-        ))}
-      </select>
+    <div className="flex flex-wrap gap-2 mb-8">
+      {CATEGORIES.map((cat) => (
+        <button
+          key={cat.id}
+          onClick={() => setSelectedCategory(cat.id === 'ALL' ? null : cat.id)}
+          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+            (selectedCategory === cat.id || (cat.id === 'ALL' && !selectedCategory))
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+          }`}
+        >
+          {cat[language as keyof typeof cat]}
+        </button>
+      ))}
     </div>
   )
 }
