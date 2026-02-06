@@ -5,8 +5,10 @@ import Link from 'next/link'
 import { ArrowLeft, ExternalLink, Globe, Calendar, Tag, Bookmark } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl, enUS, fr, es, de } from 'date-fns/locale'
+import React from 'react'
+import { useApp } from './providers' // Belangrijk voor de taalinstelling
 
-// Woordenboek voor de knoppen op deze pagina
+// --- CONSTANTEN ---
 const ui = {
   NL: { back: "Terug naar overzicht", source: "Bekijk originele bron", published: "Gepubliceerd op", saveArticle: "Sla dit artikel op", unsaveArticle: "Verwijder uit opgeslagen" },
   EN: { back: "Back to overview", source: "View original source", published: "Published on", saveArticle: "Save this article", unsaveArticle: "Remove from saved" },
@@ -17,7 +19,6 @@ const ui = {
 
 const dateLocales: Record<string, any> = { NL: nl, EN: enUS, FR: fr, ES: es, DE: de }
 
-// Backup foto's per categorie
 const CATEGORY_IMAGES: Record<string, string> = {
   TECHNOLOGY: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200",
   GREEN_WORLD: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200",
@@ -27,8 +28,13 @@ const CATEGORY_IMAGES: Record<string, string> = {
   SCIENCE: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?w=1200"
 }
 
-export function ArticleContent({ article, language }: { article: any, language: string }) {
-  const t = ui[language as keyof typeof ui] || ui.EN
+// --- DE COMPONENT ---
+// We gebruiken 'export default' en halen 'language' uit de context als die niet wordt meegegeven
+export default function ArticleContent({ article, language: propLanguage }: { article: any, language?: string }) {
+  const { language: contextLanguage } = useApp()
+  const language = (propLanguage || contextLanguage || 'NL') as keyof typeof ui
+  
+  const t = ui[language] || ui.EN
   const [isSaved, setIsSaved] = useState(Boolean(article.isSaved))
 
   async function handleToggleSave() {
@@ -45,15 +51,11 @@ export function ArticleContent({ article, language }: { article: any, language: 
     }
   }
   
-  // Zoek de vertaling van het artikel
-  const translation = article.translations.find((t: any) => t.language === language) || article.translations[0]
-
-  // Kies foto: Origineel > Categorie Backup > Algemene Backup
+  const translation = article.translations?.find((t: any) => t.language === language) || article.translations?.[0] || { title: 'Geen titel', content: 'Geen inhoud' }
   const displayImage = article.imageUrl || CATEGORY_IMAGES[article.category] || CATEGORY_IMAGES.COMMUNITY
 
   return (
     <div className="min-h-screen bg-white pb-20">
-      {/* Navigatie balk */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 mb-8">
         <div className="container mx-auto px-4 h-16 flex items-center">
           <Link href={`/?language=${language}`} className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-medium transition-colors">
@@ -64,7 +66,6 @@ export function ArticleContent({ article, language }: { article: any, language: 
       </nav>
 
       <main className="container mx-auto px-4 max-w-5xl">
-        {/* Header met Categorie & Titel */}
         <div className="mb-8">
           <span className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6 inline-block shadow-sm">
             {article.category}
@@ -76,7 +77,7 @@ export function ArticleContent({ article, language }: { article: any, language: 
           <div className="flex flex-wrap gap-6 text-gray-400 text-sm font-medium border-y border-gray-100 py-4">
              <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                {format(new Date(article.publishedAt), 'd MMMM yyyy', { locale: dateLocales[language] || nl })}
+                {article.publishedAt ? format(new Date(article.publishedAt), 'd MMMM yyyy', { locale: dateLocales[language] || nl }) : 'Datum onbekend'}
              </div>
              <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4" />
@@ -89,21 +90,17 @@ export function ArticleContent({ article, language }: { article: any, language: 
           </div>
         </div>
 
-        {/* Grote Afbeelding */}
         <div className="relative h-[500px] w-full mb-12 rounded-[2rem] overflow-hidden shadow-2xl">
           <img src={displayImage} alt="" className="w-full h-full object-cover" />
         </div>
 
-        {/* De AI-tekst */}
         <div className="max-w-3xl mx-auto">
           <div className="prose prose-lg lg:prose-xl prose-blue">
-            {/* whitespace-pre-wrap zorgt dat de alinea's van de AI zichtbaar blijven */}
             <p className="text-gray-700 leading-relaxed whitespace-pre-wrap first-letter:text-6xl first-letter:font-black first-letter:mr-3 first-letter:float-left first-letter:text-blue-600">
               {translation.content}
             </p>
           </div>
 
-          {/* Link naar de bron + Sla op */}
           <div className="mt-16 pt-8 border-t border-gray-100 flex flex-wrap gap-4 justify-center">
             <a 
               href={article.originalUrl} 
@@ -119,7 +116,7 @@ export function ArticleContent({ article, language }: { article: any, language: 
               onClick={handleToggleSave}
               className={`inline-flex items-center gap-3 px-8 py-4 rounded-full font-bold transition-all shadow-lg ${
                 isSaved
-                  ? 'bg-primary text-white hover:bg-primary/90'
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
