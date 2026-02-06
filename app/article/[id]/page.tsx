@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { ArticleContent } from '@/components/article-content'
+import ArticleContent from '@/components/article-content'
 
 export default async function ArticlePage({
   params,
