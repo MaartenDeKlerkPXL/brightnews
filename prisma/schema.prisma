@@ -44,7 +44,7 @@ model Article {
   publishedAt     DateTime
   processedAt     DateTime             @default(now())
   isSaved         Boolean              @default(false)
-  translations    ArticleTranslation[]
+  translations    ArticleTranslation
   savedArticles   SavedArticle[]
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
