@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import OpenAI from 'openai';
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -8,13 +9,13 @@ export async function GET() {
     const apiKey = process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
-      console.error("OPENAI_API_KEY ontbreekt in de omgeving");
-      return NextResponse.json({ error: "Configuratie fout" }, { status: 500 });
+      if (process.env.NEXT_PHASE === 'phase-production-build') {
+        return new Response('Skipping during build', { status: 200 });
+      }
     }
 
     const openai = new OpenAI({ apiKey });
 
-    // Jouw RSS logica...
     const articleTitle = "Voorbeeld positief nieuwsartikel";
     
     const completion = await openai.chat.completions.create({
