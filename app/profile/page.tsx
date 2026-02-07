@@ -3,6 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
   const [isLogin, setIsLogin] = useState(true)

@@ -3,6 +3,7 @@
 import { useApp } from '../lib/context';
 import Filters from '../components/Filters';
 import ArticleGrid from '../components/ArticleGrid';
+export const dynamic = 'force-dynamic';
 
 const uiTranslations = {
   NL: {

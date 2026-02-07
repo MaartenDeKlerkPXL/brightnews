@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+// Zorg dat dit pad naar je providers bestand wijst
+import { Providers } from "@/components/providers"; 
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
-import { Providers } from "@/components/providers"; // Zorg dat dit pad exact klopt
-
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="nl">
       <body className={inter.className}>
-        {/* De Providers component moet alles wrappen om de 'useApp' fout te voorkomen */}
+        {/* De Providers MOETEN alles hieronder wrappen */}
         <Providers>
           <div className="flex flex-col min-h-screen">
             <Navigation />

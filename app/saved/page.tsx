@@ -2,6 +2,7 @@
 
 import { useApp } from '@/lib/context'; // Zorg dat dit exact naar lib/context wijst
 import ArticleGrid from '@/components/ArticleGrid';
+export const dynamic = 'force-dynamic';
 
 export default function SavedPage() {
   const { language } = useApp();

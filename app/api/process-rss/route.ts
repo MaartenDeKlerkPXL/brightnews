@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import Groq from "groq-sdk";
 
-// Voorkom dat Netlify dit statisch probeert te bouwen
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
