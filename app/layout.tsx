@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-// We importeren nu de juiste Providers die we in components/providers.tsx hebben gemaakt
-import { Providers } from "@/components/providers";
 import Navigation from "@/components/navigation";
 import Footer from "@/components/footer";
+import { Providers } from "@/components/providers"; // Zorg dat dit pad exact klopt
+
 
 const inter = Inter({ subsets: ["latin"] });
 

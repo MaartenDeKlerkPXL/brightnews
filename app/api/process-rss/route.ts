@@ -1,50 +1,50 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import OpenAI from 'openai';
+import Groq from "groq-sdk";
+
+// Voorkom dat Netlify dit statisch probeert te bouwen
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // We maken de client pas HIER aan, binnen de functie
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
     
     if (!apiKey) {
-      if (process.env.NEXT_PHASE === 'phase-production-build') {
-        return new Response('Skipping during build', { status: 200 });
-      }
+      return NextResponse.json({ error: "GROQ_API_KEY ontbreekt" }, { status: 500 });
     }
 
-    const openai = new OpenAI({ apiKey });
+    const groq = new Groq({ apiKey });
 
-    const articleTitle = "Voorbeeld positief nieuwsartikel";
+    // Dummy data (vervang dit later door je echte RSS fetch logica)
+    const articleTitle = "Wetenschappers ontdekken nieuwe manier om oceanen te reinigen";
     
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+    const chatCompletion = await groq.chat.completions.create({
       messages: [
         {
           role: "system",
-          content: "Je bent een vertaler die gespecialiseerd is in positief nieuws. Vertaal titels en maak korte, vrolijke samenvattingen."
+          content: "Je bent een vertaler. Vertaal de titel en maak een korte positieve samenvatting (2 zinnen) in NL, EN, FR, ES, DE. Antwoord ALTIJD in puur JSON formaat."
         },
         {
           role: "user",
-          content: `Vertaal de volgende titel en maak een korte samenvatting (max 2 zinnen) in NL, EN, FR, ES, DE: "${articleTitle}". 
-          Geef het resultaat terug in dit JSON formaat:
-          { "translations": [ { "language": "NL", "title": "...", "content": "..." } ] }`
+          content: `Vertaal deze titel: "${articleTitle}". 
+          Format: { "translations": [ { "language": "NL", "title": "...", "content": "..." } ] }`
         }
       ],
+      model: "llama-3.3-70b-versatile", // Een van de snelste en beste modellen op Groq
       response_format: { type: "json_object" },
     });
 
-    const data = JSON.parse(completion.choices[0].message.content || '{}');
+    const data = JSON.parse(chatCompletion.choices[0].message.content || '{}');
 
+    // Opslaan in de database via Prisma
     const newArticle = await db.article.create({
       data: {
         originalTitle: articleTitle,
         originalContent: "",
-        originalUrl: "",
+        originalUrl: "https://voorbeeld.nl",
         originalSource: "Bright",
-        category: "TECH",
-        region: "NL",
+        category: "GREEN_WORLD",
+        region: "EUROPE",
         publishedAt: new Date(),
         translations: {
           create: data.translations
@@ -52,9 +52,9 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json({ added: 1, article: newArticle });
+    return NextResponse.json({ success: true, added: 1, article: newArticle });
   } catch (error) {
-    console.error("Fout in process-rss:", error);
-    return NextResponse.json({ error: "Build failed" }, { status: 500 });
+    console.error("Groq Error:", error);
+    return NextResponse.json({ error: "AI verwerking mislukt" }, { status: 500 });
   }
 }
